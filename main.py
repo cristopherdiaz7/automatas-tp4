@@ -66,7 +66,7 @@ def top_10_de_artista(df):
         print(f"{artista} - {cancion} | {tiempo} | {reproducciones:.2f}M reproducciones")
 
 def insertar_registro_manual(df):
-    print("\n✍️ Insertar nuevo registro manualmente:")
+    print("\n✍Insertar nuevo registro manualmente:")
 
     artist = input("Artista: ").strip()
     track = input("Título del tema: ").strip()
@@ -114,7 +114,59 @@ def insertar_registro_manual(df):
     }
 
     df.loc[len(df)] = nuevo_registro
-    print("✅ Registro insertado correctamente.")
+    print("Registro insertado correctamente.")
+
+def insertar_registros_batch(df):
+    archivo = input("Ingresá el nombre del archivo CSV (ej: nuevos_registros.csv): ").strip()
+    try:
+        nuevos_df = pd.read_csv(archivo)
+    except FileNotFoundError:
+        print("No se encontró el archivo.")
+        return
+    except pd.errors.EmptyDataError:
+        print("El archivo está vacío o mal formateado.")
+        return
+
+    registros_agregados = 0
+
+    for _, fila in nuevos_df.iterrows():
+        try:
+            duracion = str(fila["Duration"])
+            if not re.match(r"^\d{2}:\d{2}:\d{2}$", duracion):
+                raise ValueError("Duración inválida")
+            h, m, s = map(int, duracion.split(":"))
+            duracion_ms = ((h * 60 + m) * 60 + s) * 1000
+
+            if not re.match(r"^https?://\S+$", str(fila["URL_spotify"])):
+                raise ValueError("URL Spotify inválida")
+            if not re.match(r"^https?://\S+$", str(fila["URL_youtube"])):
+                raise ValueError("URL YouTube inválida")
+
+            # Likes y Views
+            likes = int(fila["Likes"])
+            views = int(fila["Views"])
+            if likes > views:
+                raise ValueError("Likes mayores que Views")
+
+            nuevo = {
+                "Artist": fila["Artist"],
+                "Track": fila["Track"],
+                "Album": fila["Album"],
+                "Uri": fila["Uri"],
+                "Duration_ms": duracion_ms,
+                "URL_spotify": fila["URL_spotify"],
+                "URL_youtube": fila["URL_youtube"],
+                "Likes": likes,
+                "Views": views
+            }
+
+            df.loc[len(df)] = nuevo
+            registros_agregados += 1
+
+        except Exception as e:
+            print(f"Error en un registro: {e}")
+
+    print(f"✅ Se insertaron {registros_agregados} registros correctamente.")
 
 
 def main():
@@ -127,7 +179,15 @@ def main():
         elif opcion == "2":
             top_10_de_artista(df)
         elif opcion == "3":
-            insertar_registro_manual(df)
+            print("1. Inserción manual")
+            print("2. Inserción desde archivo CSV")
+            subopcion = input("Seleccioná subopción: ")
+            if subopcion == "1":
+                insertar_registro_manual(df)
+            elif subopcion == "2":
+                insertar_registros_batch(df)
+            else:
+                print("Subopción inválida.")
         elif opcion == "4":
             print("Mostrar álbumes (a implementar)")
         elif opcion == "5":
