@@ -142,7 +142,6 @@ def insertar_registros_batch(df):
             if not re.match(r"^https?://\S+$", str(fila["URL_youtube"])):
                 raise ValueError("URL YouTube inválida")
 
-            # Likes y Views
             likes = int(fila["Likes"])
             views = int(fila["Views"])
             if likes > views:
@@ -168,6 +167,31 @@ def insertar_registros_batch(df):
 
     print(f"✅ Se insertaron {registros_agregados} registros correctamente.")
 
+def mostrar_albumes_de_artista(df):
+    artista_input = input("🎤 Ingresá el nombre del artista: ").strip()
+
+    canciones = df[df["Artist"].str.contains(artista_input, case=False, na=False)]
+
+    if canciones.empty:
+        print(" No se encontraron canciones para ese artista.")
+        return
+
+    albums = canciones.groupby("Album")
+
+    print(f"\n Álbumes de {artista_input.title()}:")
+    print(f"Total de álbumes: {albums.ngroups}")
+
+    for nombre_album, grupo in albums:
+        cantidad_temas = len(grupo)
+        duracion_total_ms = grupo["Duration_ms"].sum()
+        duracion_total = pd.to_timedelta(duracion_total_ms, unit='ms')
+        duracion_str = str(duracion_total).split(".")[0]
+
+        print(f"\n Álbum: {nombre_album}")
+        print(f" - Canciones: {cantidad_temas}")
+        print(f" - Duración total: {duracion_str}")
+
+
 
 def main():
     while True:
@@ -189,7 +213,7 @@ def main():
             else:
                 print("Subopción inválida.")
         elif opcion == "4":
-            print("Mostrar álbumes (a implementar)")
+            mostrar_albumes_de_artista(df)
         elif opcion == "5":
             print("¡Hasta luego!")
             break
