@@ -117,7 +117,7 @@ def insertar_registro_manual(df):
     print("Registro insertado correctamente.")
 
 def insertar_registros_batch(df):
-    archivo = input("Ingresá el nombre del archivo CSV (ej: nuevos_registros.csv): ").strip()
+    archivo = input("Ingresá el nombre del archivo CSV: ").strip()
     try:
         nuevos_df = pd.read_csv(archivo)
     except FileNotFoundError:
