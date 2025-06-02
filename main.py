@@ -42,7 +42,7 @@ def buscar_titulo_o_artista(df):
         print(f"{artista} - {cancion} ({tiempo})")
 
 def top_10_de_artista(df):
-    artista_input = input("🎤 Ingresá el nombre del artista: ").strip()
+    artista_input = input("Ingresá el nombre del artista: ").strip()
 
     filtro = df[df["Artist"].str.contains(artista_input, case=False, na=False)]
 
@@ -55,7 +55,7 @@ def top_10_de_artista(df):
 
     top_10 = filtro.head(10)
 
-    print(f"\n🎧 Top 10 canciones de {artista_input.title()}:")
+    print(f"\n Top 10 canciones de {artista_input.title()}:")
     for _, fila in top_10.iterrows():
         artista = fila["Artist"]
         cancion = fila["Track"]
