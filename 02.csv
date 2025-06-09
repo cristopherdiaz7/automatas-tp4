@@ -1,0 +1,3 @@
+Artist,Url_spotify,Track,Album,Uri
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 1,Invalid Test File,spotify:track:0d28khcov6AiegSCpG5TuT
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 2,Invalid Test File,spotify:1foMv2HQwfQ2vntFf9HFeG

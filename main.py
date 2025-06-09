@@ -2,7 +2,7 @@ import pandas as pd
 import re
 import os
 
-CSV_PATH = "data/spotify_and_youtube.csv"
+CSV_PATH = "spotify_and_youtube.csv"
 COLUMNS_ORDER = [
     "Index", "Artist", "Url_spotify", "Track", "Album", "Album_type", "Uri",
     "Danceability", "Energy", "Key", "Loudness", "Speechiness", "Acousticness",
@@ -33,20 +33,30 @@ def buscar_titulo_o_artista(df):
                     df['Artist'].apply(lambda x: bool(patron.search(str(x))))]
 
     if resultados.empty:
-        print("No se encontraron coincidencias.")
+        print("❌ No se encontraron coincidencias.")
         return
 
+    # Determinar la columna de reproducciones
     col_reproducciones = "Stream" if "Stream" in resultados.columns else "Views"
+    resultados = resultados.copy()  # ⚠️ Evita SettingWithCopyWarning
+    resultados[col_reproducciones] = pd.to_numeric(resultados[col_reproducciones], errors="coerce")
+
+    # Ordenar
     resultados = resultados.sort_values(by=col_reproducciones, ascending=False)
 
-    print("\n Resultados encontrados:")
+    print("\n🎵 Resultados encontrados:")
     for _, fila in resultados.iterrows():
         artista = fila["Artist"]
         cancion = fila["Track"]
-        duracion_ms = int(fila["Duration_ms"])
-        duracion = pd.to_timedelta(duracion_ms, unit='ms')
-        tiempo = str(duracion).split(" ")[-1]
+        try:
+            duracion_ms = int(float(fila["Duration_ms"]))
+            duracion = pd.to_timedelta(duracion_ms, unit='ms')
+            tiempo = str(duracion).split(" ")[-1]
+        except:
+            tiempo = "duración desconocida"
+
         print(f"{artista} - {cancion} ({tiempo})")
+
 
 def top_10_de_artista(df):
     artista_input = input("Ingresá el nombre del artista: ").strip()
@@ -144,16 +154,72 @@ def insertar_registros_desde_csv(df):
         print(f"❌ Error al leer el archivo: {e}")
         return df
 
-    columnas_faltantes = [col for col in COLUMNS_ORDER if col not in nuevo_df.columns]
-    if columnas_faltantes:
-        print(f"❌ El archivo no contiene las columnas requeridas: {columnas_faltantes}")
+    columnas_minimas = {"Artist", "Track", "Album", "Uri", "Duration_ms", "Url_spotify", "Url_youtube", "Likes", "Views"}
+    if not columnas_minimas.issubset(nuevo_df.columns):
+        faltantes = columnas_minimas - set(nuevo_df.columns)
+        print(f"❌ El archivo no contiene las columnas mínimas requeridas: {faltantes}")
         return df
 
-    nuevo_df["Index"] = range(len(df), len(df) + len(nuevo_df))
-    df = pd.concat([df, nuevo_df[COLUMNS_ORDER]], ignore_index=True)
+    for col in COLUMNS_ORDER:
+        if col not in nuevo_df.columns:
+            nuevo_df[col] = ""
+
+    registros_validos = []
+
+    for _, fila in nuevo_df.iterrows():
+        try:
+            # Validar duración
+            if "Duration" in fila and pd.notna(fila["Duration"]):
+                duracion = str(fila["Duration"])
+                if not re.match(r"^\d{2}:\d{2}:\d{2}$", duracion):
+                    raise ValueError("Duración inválida")
+                h, m, s = map(int, duracion.split(":"))
+                duracion_ms = ((h * 60 + m) * 60 + s) * 1000
+            elif "Duration_ms" in fila:
+                valor_duracion = fila["Duration_ms"]
+                if pd.isna(valor_duracion) or str(valor_duracion).strip() == "":
+                    raise ValueError("Duration_ms vacío o inválido")
+                duracion_ms = int(float(valor_duracion))
+            else:
+                raise ValueError("Falta campo de duración")
+
+            # Validar URLs
+            url_spotify = str(fila.get("URL_spotify") or fila.get("Url_spotify", "")).strip()
+            url_youtube = str(fila.get("URL_youtube") or fila.get("Url_youtube", "")).strip()
+            if not re.match(r"^https?://\S+$", url_spotify):
+                raise ValueError("URL Spotify inválida")
+            if not re.match(r"^https?://\S+$", url_youtube):
+                raise ValueError("URL YouTube inválida")
+
+            # Validar números
+            likes = int(fila["Likes"])
+            views = int(fila["Views"])
+            if likes > views:
+                raise ValueError("Likes mayores que Views")
+
+            fila["Duration_ms"] = duracion_ms
+            fila["Url_spotify"] = url_spotify
+            fila["Url_youtube"] = url_youtube
+
+            registros_validos.append(fila)
+
+        except Exception as e:
+            print("❌ Registro inválido descartado.")
+
+    if not registros_validos:
+        print("⚠️ No se insertó ningún registro.")
+        return df
+
+    df_nuevos = pd.DataFrame(registros_validos)
+    df_nuevos["Index"] = range(len(df), len(df) + len(df_nuevos))
+    df_nuevos = df_nuevos[COLUMNS_ORDER]
+
+    df = pd.concat([df, df_nuevos], ignore_index=True)
     df.to_csv(CSV_PATH, index=False)
-    print("✅ Registros importados y guardados correctamente.")
+    print(f"✅ Se insertaron {len(df_nuevos)} registros correctamente.")
     return df
+
+
 
 def mostrar_albumes_de_artista(df):
     artista_input = input("🎤 Ingresá el nombre del artista: ").strip()
@@ -192,6 +258,8 @@ def main():
         elif opcion == "4":
             mostrar_albumes_de_artista(df)
         elif opcion == "5":
+            df.to_csv("data/spotify_and_youtube.csv", index=False)
+            print("Cambios guardados en 'spotify_and_youtube.csv'.")
             print("¡Hasta luego!")
             break
         else:

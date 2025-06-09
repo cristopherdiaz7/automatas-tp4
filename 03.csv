@@ -1,0 +1,5 @@
+Artist,Url_spotify,Track,Album,Uri,Duration_ms,Url_youtube,Views,Likes
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 5,Partial Test File,someUri,yes,,600,200
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 6,Partial Test File,spotify:track:1foMv2HQwfQ2vntFf9HFeG,280200,https://www.youtube.com/watch?v=dQw4w9WgXcQ,800,40
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 7,Partial Test File,,228993,https://www.youtube.com/watch?v=dQw4w9WgXcQ,1023,771
+Test Artist,https://open.spotify.com/artist/3AA28KZvwAUcZuOKwyblJQ,Test Track 8,Partial Test File,spotify:track:0q6LuUqGLUiCPP1cbdwFs3,199931,https://www.youtube.com/watch?v=dQw4w9WgXcQ,213,7
